@@ -1,7 +1,6 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
-const { Server,} = require("socket.io");
+const { Server, } = require("socket.io");
 const io = new Server(5000, {
     cors: true
 })
@@ -12,12 +11,25 @@ const io = new Server(5000, {
 // app.use(express.json());
 
 // server start
-app.get('/', (req, res) => {
-    res.send("Socket server is running")
-})
+// app.get('/', (req, res) => {
+//     res.send("Socket server is running")
+// })
 
-io.on("connection", (socket)=>{
-    console.log(`Socket Connected`, socket.id)
+const emailToSocketIdMap = new Map();
+const socketIdToEmailMap = new Map();
+
+
+io.on("connection", (socket) => {
+    console.log(`Socket Connected`, socket.id);
+    socket.on('room:join', (data) => {
+        console.log(data);
+        const { email , room} = data;
+        emailToSocketIdMap.set(email, socket.id);
+        socketIdToEmailMap.set(socket.id, email);
+        io.to(room).emit("user:joined", {email , id: socket.id });
+        socket.join(room);
+        io.to(socket.id).emit('room:join', data);
+    })
 })
 
 
